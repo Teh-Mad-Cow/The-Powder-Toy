@@ -885,6 +885,11 @@ bool GameController::GetAHeatEnable()
 	return gameModel->GetAHeatEnable();
 }
 
+void GameController::ResetAHeat()
+{
+	gameModel->ResetAHeat();
+}
+
 void GameController::ToggleNewtonianGravity()
 {
 	gameModel->SetNewtonianGravity(!gameModel->GetNewtonianGrvity());
@@ -1295,8 +1300,13 @@ void GameController::OpenElementSearch()
 {
 	std::vector<Tool*> toolList;
 	std::vector<Menu*> menuList = gameModel->GetMenuList();
-	for(auto *mm : menuList)
+	for (auto i = 0U; i < menuList.size(); ++i)
 	{
+		if (i == SC_FAVORITES)
+		{
+			continue;
+		}
+		auto *mm = menuList[i];
 		if(!mm)
 			continue;
 		std::vector<Tool*> menuToolList = mm->GetToolList();

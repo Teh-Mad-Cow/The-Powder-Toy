@@ -1900,6 +1900,7 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 			return 1;
 		else if (x < 0 || x >= XRES || y < 0 || y >= YRES)
 			return 1;
+		
 		if (c == 0)
 		{
 			cm = TYP(pmap[y][x]);
@@ -1918,6 +1919,7 @@ int Simulation::FloodParts(int x, int y, int fullc, int cm, int flags)
 		else
 			cm = 0;
 	}
+	
 	if (c != 0 && IsWallBlocking(x, y, c))
 		return 1;
 
@@ -3036,6 +3038,9 @@ int Simulation::get_normal_interp(int pt, float x0, float y0, float dx, float dy
 
 void Simulation::kill_part(int i)//kills particle number i
 {
+	if (i < 0 || i >= NPART)
+		return;
+	
 	int x = (int)(parts[i].x + 0.5f);
 	int y = (int)(parts[i].y + 0.5f);
 
@@ -3112,9 +3117,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 {
 	int i, oldType = PT_NONE;
 
-	if (x<0 || y<0 || x>=XRES || y>=YRES)
-		return -1;
-	if (t>=0 && t<PT_NUM && !elements[t].Enabled)
+	if (x<0 || y<0 || x>=XRES || y>=YRES || t<=0 || t>=PT_NUM || !elements[t].Enabled)
 		return -1;
 
 	if (t == PT_SPRK && !(p == -2 && elements[TYP(pmap[y][x])].CtypeDraw))
@@ -3152,6 +3155,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 			return -1;
 		}
 		else if (IsWallBlocking(x, y, t))
+			return -1;
+		else if (bmap[y/CELL][x/CELL]==WL_DETECT && elements[t].Properties & TYPE_SOLID)
 			return -1;
 		else if (photons[y][x] && (elements[t].Properties & TYPE_ENERGY))
 			return -1;
@@ -3415,8 +3420,7 @@ void Simulation::UpdateParticles(int start, int end)
 			          (bmap[y/CELL][x/CELL]==WL_ALLOWLIQUID && !(elements[t].Properties&TYPE_LIQUID)) ||
 			          (bmap[y/CELL][x/CELL]==WL_ALLOWPOWDER && !(elements[t].Properties&TYPE_PART)) ||
 			          (bmap[y/CELL][x/CELL]==WL_ALLOWGAS && !(elements[t].Properties&TYPE_GAS)) || //&& elements[t].Falldown!=0 && parts[i].type!=PT_FIRE && parts[i].type!=PT_SMKE && parts[i].type!=PT_CFLM) ||
-			          (bmap[y/CELL][x/CELL]==WL_ALLOWENERGY && !(elements[t].Properties&TYPE_ENERGY)) ||
-					  (bmap[y/CELL][x/CELL]==WL_DETECT && (t==PT_METL || t==PT_SPRK)) ||
+					  (bmap[y/CELL][x/CELL]==WL_ALLOWENERGY && !(elements[t].Properties&TYPE_ENERGY)) ||
 			          (bmap[y/CELL][x/CELL]==WL_EWALL && !emap[y/CELL][x/CELL])) && (t!=PT_STKM) && (t!=PT_STKM2) && (t!=PT_FIGH)))
 			{
 				kill_part(i);
@@ -4712,7 +4716,10 @@ void Simulation::SimulateGoL()
 				}
 				else
 				{
-					parts[ID(r)].tmp --;
+					if (!(bmap[ny/CELL][nx/CELL] == WL_STASIS && emap[ny/CELL][nx/CELL] < 8))
+					{
+						parts[ID(r)].tmp --;
+					}
 				}
 			}
 		}

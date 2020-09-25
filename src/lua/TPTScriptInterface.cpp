@@ -224,7 +224,7 @@ String TPTScriptInterface::FormatCommand(String command)
 	String outputData;
 
 	//Split command into words, put them on the stack
-	for(String word : command.PartitionBy(' '))
+	for(String word : command.PartitionBy(' ', true))
 		words.push_back(word);
 	while(!words.empty())
 	{
@@ -320,7 +320,7 @@ AnyType TPTScriptInterface::tptS_set(std::deque<String> * words)
 		}
 		else
 			partIndex = ((NumberType)selector).Value();
-		if(partIndex<0 || partIndex>NPART || sim->parts[partIndex].type==0)
+		if(partIndex<0 || partIndex>=NPART || sim->parts[partIndex].type==0)
 			throw GeneralException("Invalid particle");
 
 		switch(propertyFormat)

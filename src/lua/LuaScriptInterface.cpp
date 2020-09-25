@@ -125,6 +125,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 
 	//New TPT API
 	l = luaL_newstate();
+	tpt_lua_setmainthread(l);
 	lua_atpanic(l, atPanic);
 	luaL_openlibs(l);
 	luaopen_bit(l);
@@ -291,7 +292,7 @@ tpt.partsdata = nil");
 	}
 
 	tptPart = new LuaSmartRef(l);
-	tptPart->Assign(-1);
+	tptPart->Assign(l, -1);
 	lua_pop(l, 1);
 #endif
 
@@ -445,9 +446,21 @@ int LuaScriptInterface::tpt_newIndex(lua_State *l)
 			luaL_error(l, "Invalid tool identifier: %s", lua_tostring(l, 3));
 	}
 	else if (!key.compare("brushx"))
-		c->SetBrushSize(ui::Point(luaL_checkinteger(l, 3), m->GetBrush()->GetRadius().Y));
+	{
+		int brushx = luaL_checkinteger(l, 3);
+		if (brushx < 0 || brushx >= XRES)
+			luaL_error(l, "Invalid brush width");
+
+		c->SetBrushSize(ui::Point(brushx, m->GetBrush()->GetRadius().Y));
+	}
 	else if (!key.compare("brushy"))
-		c->SetBrushSize(ui::Point(m->GetBrush()->GetRadius().X, luaL_checkinteger(l, 3)));
+	{
+		int brushy = luaL_checkinteger(l, 3);
+		if (brushy < 0 || brushy >= YRES)
+			luaL_error(l, "Invalid brush height");
+
+		c->SetBrushSize(ui::Point(m->GetBrush()->GetRadius().X, brushy));
+	}
 	else if (!key.compare("brushID"))
 		m->SetBrushID(luaL_checkinteger(l, 3));
 	else if (!key.compare("decoSpace"))
@@ -510,7 +523,7 @@ int LuaScriptInterface::interface_addComponent(lua_State * l)
 		if (ok.second)
 		{
 			auto it = ok.first;
-			it->second.Assign(1);
+			it->second.Assign(l, 1);
 			it->first->owner_ref = it->second;
 		}
 		luacon_ci->Window->AddComponent(luaComponent->GetComponent());
@@ -1343,6 +1356,10 @@ int LuaScriptInterface::simulation_floodParts(lua_State * l)
 	int c = luaL_optint(l,3,luacon_model->GetActiveTool(0)->GetToolID());
 	int cm = luaL_optint(l,4,-1);
 	int flags = luaL_optint(l,5,luacon_sim->replaceModeFlags);
+	
+	if (x < CELL || x >= XRES-CELL || y < CELL || y >= YRES-CELL)
+		return luaL_error(l, "coordinates out of range (%d,%d)", x, y);
+	
 	int ret = luacon_sim->FloodParts(x, y, c, cm, flags);
 	lua_pushinteger(l, ret);
 	return 1;
@@ -2802,7 +2819,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "Update");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			lua_el_func[id].Assign(-1);
+			lua_el_func[id].Assign(l, -1);
 			lua_el_mode[id] = 1;
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
@@ -2816,7 +2833,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "Graphics");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			lua_gr_func[id].Assign(-1);
+			lua_gr_func[id].Assign(l, -1);
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
 		{
@@ -2828,7 +2845,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "Create");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			luaCreateHandlers[id].Assign(-1);
+			luaCreateHandlers[id].Assign(l, -1);
 			luacon_sim->elements[id].Create = luaCreateWrapper;
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
@@ -2841,7 +2858,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "CreateAllowed");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			luaCreateAllowedHandlers[id].Assign(-1);
+			luaCreateAllowedHandlers[id].Assign(l, -1);
 			luacon_sim->elements[id].CreateAllowed = luaCreateAllowedWrapper;
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
@@ -2854,7 +2871,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "ChangeType");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			luaChangeTypeHandlers[id].Assign(-1);
+			luaChangeTypeHandlers[id].Assign(l, -1);
 			luacon_sim->elements[id].ChangeType = luaChangeTypeWrapper;
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
@@ -2867,7 +2884,7 @@ int LuaScriptInterface::elements_element(lua_State * l)
 		lua_getfield(l, -1, "CtypeDraw");
 		if (lua_type(l, -1) == LUA_TFUNCTION)
 		{
-			luaCtypeDrawHandlers[id].Assign(-1);
+			luaCtypeDrawHandlers[id].Assign(l, -1);
 			luacon_sim->elements[id].CtypeDraw = luaCtypeDrawWrapper;
 		}
 		else if (lua_type(l, -1) == LUA_TBOOLEAN && !lua_toboolean(l, -1))
@@ -2982,7 +2999,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 					lua_el_mode[id] = 1; //update after
 					break;
 				}
-				lua_el_func[id].Assign(3);
+				lua_el_func[id].Assign(l, 3);
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
 			{
@@ -2995,7 +3012,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if (lua_type(l, 3) == LUA_TFUNCTION)
 			{
-				lua_gr_func[id].Assign(3);
+				lua_gr_func[id].Assign(l, 3);
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
 			{
@@ -3008,7 +3025,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if (lua_type(l, 3) == LUA_TFUNCTION)
 			{
-				luaCreateHandlers[id].Assign(3);
+				luaCreateHandlers[id].Assign(l, 3);
 				luacon_sim->elements[id].Create = luaCreateWrapper;
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
@@ -3021,7 +3038,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if (lua_type(l, 3) == LUA_TFUNCTION)
 			{
-				luaCreateAllowedHandlers[id].Assign(3);
+				luaCreateAllowedHandlers[id].Assign(l, 3);
 				luacon_sim->elements[id].CreateAllowed = luaCreateAllowedWrapper;
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
@@ -3034,7 +3051,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if (lua_type(l, 3) == LUA_TFUNCTION)
 			{
-				luaChangeTypeHandlers[id].Assign(3);
+				luaChangeTypeHandlers[id].Assign(l, 3);
 				luacon_sim->elements[id].ChangeType = luaChangeTypeWrapper;
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
@@ -3047,7 +3064,7 @@ int LuaScriptInterface::elements_property(lua_State * l)
 		{
 			if (lua_type(l, 3) == LUA_TFUNCTION)
 			{
-				luaCtypeDrawHandlers[id].Assign(3);
+				luaCtypeDrawHandlers[id].Assign(l, 3);
 				luacon_sim->elements[id].CtypeDraw = luaCtypeDrawWrapper;
 			}
 			else if (lua_type(l, 3) == LUA_TBOOLEAN && !lua_toboolean(l, 3))
