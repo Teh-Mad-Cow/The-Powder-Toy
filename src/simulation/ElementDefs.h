@@ -69,6 +69,7 @@
 #define PT_NUM	(1<<PMAPBITS)
 
 struct playerst;
+struct entityst;
 
 
 #endif /* ELEMENTS_H_ */

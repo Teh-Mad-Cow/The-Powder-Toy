@@ -112,7 +112,7 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 			continue;
 
 		// Ensure we can spawn this element
-		if ((player.spwn == 1 && tempPart.type==PT_STKM) || (player2.spwn == 1 && tempPart.type==PT_STKM2))
+		if ((player.spwn == 1 && tempPart.type==PT_STKM) || (player2.spwn == 1 && tempPart.type==PT_STKM2) || (terraria_player.spwn == 1 && tempPart.type==PT_PLYR))
 			continue;
 		if ((tempPart.type == PT_SPAWN && elementCount[PT_SPAWN]) || (tempPart.type == PT_SPAWN2 && elementCount[PT_SPAWN2]))
 			continue;
@@ -207,6 +207,9 @@ int Simulation::Load(GameSave * save, bool includePressure, int fullX, int fullY
 				player2.rocketBoots = true;
 			if (save->stkm.fan2)
 				player2.fan = true;
+			break;
+		case PT_PLYR:
+			terraria_player.spwn = 1;
 			break;
 		case PT_SPAWN:
 			player.spawnID = i;
@@ -2262,6 +2265,8 @@ void Simulation::clear_sim(void)
 	player2.spawnID = -1;
 	player2.rocketBoots = false;
 	player2.fan = false;
+	terraria_entitycount = 0;
+	terraria_player.spwn = 0;
 	//memset(pers_bg, 0, WINDOWW*YRES*PIXELSIZE);
 	//memset(fire_r, 0, sizeof(fire_r));
 	//memset(fire_g, 0, sizeof(fire_g));
@@ -4217,6 +4222,9 @@ killed:
 						pmap[ny][nx] = PMAP(i, t);
 				}
 			}
+			/*else if (t == PT_PLYR) {
+			  // terraria player code
+			}*/
 			else if (elements[t].Properties & TYPE_ENERGY)
 			{
 				if (t == PT_PHOT)

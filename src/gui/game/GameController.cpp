@@ -698,7 +698,9 @@ bool GameController::KeyPress(int key, int scan, bool repeat, bool shift, bool c
 			sim->player2.comm = (int)(sim->player2.comm)|0x04;
 		}
 
-		if (!sim->elementCount[PT_STKM2] || ctrl)
+		sim->terraria_player.comm = (int)(sim->player.comm) | (int)(sim->player2.comm); // temporary hack to allow either control style.
+
+		if (!sim->elementCount[PT_STKM2] && !sim->elementCount[PT_PLYR] || ctrl)
 		{
 			switch(scan)
 			{
@@ -760,6 +762,7 @@ bool GameController::KeyRelease(int key, int scan, bool repeat, bool shift, bool
 		{
 			sim->player2.comm = (int)(sim->player2.comm)&7;
 		}
+		sim->terraria_player.comm = (int)(sim->player.comm) | (int)(sim->player2.comm); // temporary hack to allow either control style.
 	}
 	return ret;
 }

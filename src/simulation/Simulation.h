@@ -8,6 +8,7 @@
 
 #include "Particle.h"
 #include "Stickman.h"
+#include "Entities.h"
 #include "WallType.h"
 #include "Sign.h"
 #include "ElementDefs.h"
@@ -75,6 +76,10 @@ public:
 	playerst fighters[MAX_FIGHTERS]; //Defined in Stickman.h
 	unsigned char fighcount; //Contains the number of fighters
 	bool gravWallChanged;
+	//TPTerraria entities
+	entityst terraria_player;
+	entityst terraria_entities[MAX_ENTITIES];
+	unsigned char terraria_entitycount;
 	//Portals and Wifi
 	Particle portalp[CHANNELS][8][80];
 	int portal_rx[8];
