@@ -74,20 +74,49 @@ int Element_PLYR_entity_controller(entityst* playerp, UPDATE_FUNC_ARGS) {
 	//left
 	if (((playerp->comm & 0x01) == 0x01) && parts[i].vx > -PLYR_RUNNING_VELOCITY)
 	{
-		parts[i].vx -= PLYR_RUNNING_ACCELERATION;
+		if (!pmap[y][x - 1]) // prevents wall sticking
+			parts[i].vx -= PLYR_RUNNING_ACCELERATION;
+		if (pmap[y][x - 1] && !pmap[y - 1][x - 1]) //auto step-up 
+		{
+			parts[i].y -= 1; // just teleport them to the next position ?
+			parts[i].x -= 1; //TODO: This should be done elsewhere, so they don't skip off ledges if too fast
+		}
+		else if (pmap[y + 2][x - 1] && !pmap[y + 1][x - 1]) //auto step-down
+		{
+			parts[i].y += 1;
+			parts[i].x -= 1;
+		}
 	}
 
 	//right
 	if (((playerp->comm & 0x02) == 0x02) && parts[i].vx < PLYR_RUNNING_VELOCITY)
 	{
-		parts[i].vx += PLYR_RUNNING_ACCELERATION;
+		if (!pmap[y][x + 1]) // prevents wall sticking
+			parts[i].vx += PLYR_RUNNING_ACCELERATION;
+		if (pmap[y][x + 1] && !pmap[y - 1][x + 1]) //auto step-up 
+		{
+			parts[i].y -= 1; // just teleport them to the next position
+			parts[i].x += 1;
+		}
+		else if (pmap[y + 2][x + 1] && !pmap[y + 1][x + 1]) //auto step-down
+		{
+			parts[i].y += 1;
+			parts[i].x += 1;
+		}
 	}
 
 	//down
 	if ((playerp->comm & 0x08) == 0x08)
 	{
-
+		//if (pmap[y + 1][x] && !pmap[y + 2][x]) // downward passthrough 1px platforms
+		//	parts[i].y += 2;
 	}
+	//// upward passthrough 1px platforms ?
+	//if (parts[i].vy < 0 && pmap[y - 1][x] && !pmap[y - 2][x])
+	//{
+	//	parts[i].y -= 2;
+	//	parts[i].vy += 1;
+	//}
 
 	//jump
 	if ((playerp->comm & 0x04) == 0x04)
